@@ -1,9 +1,13 @@
-use std::env;
-
-use grammers_client::{Client, Config};
+use grammers_client::{types::UserProfilePhoto, Client, Config};
 use grammers_session::Session;
+use grammers_tl_types::types::messages::DialogsSlice;
+use std::env;
+use tauri::utils::config::FsAllowlistConfig;
 
-use crate::tg::{CLIENT, TOKEN};
+use crate::{
+    models::dialog::Dialog,
+    tg::{CLIENT, TOKEN},
+};
 
 /* !!! TODO: HANDLE ALL UNWRAPS !!! */
 #[tauri::command]
@@ -74,16 +78,33 @@ pub async fn sign_in(code: String) -> usize {
 }
 
 #[tauri::command]
-pub async fn get_dialogs() -> Vec<String> {
+pub async fn get_dialogs() -> Vec<Dialog> {
     let client = CLIENT.lock().await;
 
     if client.as_ref().unwrap().is_authorized().await.unwrap() {
         let mut result = vec![];
         let mut dialogs = client.as_ref().unwrap().iter_dialogs();
 
+        let mut x = 0;
         while let Some(dialog) = dialogs.next().await.unwrap() {
-            let chat = dialog.chat();
-            result.push(format!("- {: >10} {}", chat.id(), chat.name()));
+            // if x >= 5 {
+            //     break;
+            // }
+            let chat = dialog.chat().clone();
+            if let Some(photo) = &chat.photo_downloadable(false) {
+                let mut download = client.as_ref().unwrap().iter_download(&photo);
+                let mut bytes = Vec::new();
+                while let Some(chunk) = download.next().await.unwrap() {
+                    bytes.extend(chunk);
+                }
+
+                result.push(Dialog::new(
+                    chat.id().to_string(),
+                    chat.name().to_string(),
+                    bytes.clone(),
+                ));
+                x += 1;
+            }
         }
 
         return result;

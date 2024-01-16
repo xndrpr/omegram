@@ -1,6 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 pub mod commands;
+pub mod models;
 pub mod tg;
 
 use std::env;

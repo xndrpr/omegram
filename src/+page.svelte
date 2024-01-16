@@ -10,7 +10,9 @@
     if (auth == false) {
       switchEndpoint("/login");
     } else {
+      dialogs = JSON.parse(localStorage.getItem("dialogs"));
       dialogs = await invoke("get_dialogs");
+      localStorage.setItem("dialogs", JSON.stringify(dialogs));
     }
   });
 
@@ -22,16 +24,21 @@
   }
 </script>
 
-<svelte:head>Omegram</svelte:head>
-
 <main class="container">
   {#if $endpoint == "/"}
-    <h1>Home</h1>
-
     {#each dialogs as dlg}
-      <i>{dlg}</i>
-      <hr />
-      <br />
+      <div class="dialog">
+        <img
+          width="50px"
+          height="50px"
+          style="border-radius: 100%"
+          src={`data:image/png;base64,${btoa(
+            String.fromCharCode(...dlg.photo),
+          )}`}
+          alt="avatar"
+        />
+        <b>{dlg.name}</b>
+      </div>
     {/each}
 
     {#if !auth}
@@ -49,3 +56,19 @@
     <h1>404</h1>
   {/if}
 </main>
+
+<style>
+  main {
+    padding: 1rem;
+    background-color: #010521;
+    color: #d4d8fd;
+    font-family: "Montserrat", sans-serif;
+  }
+
+  .dialog {
+    margin: 0rem 1rem 1rem 1rem;
+    padding: 1rem;
+    background-color: #8393fb;
+    color: #010521;
+  }
+</style>
