@@ -1,6 +1,6 @@
 # Omegram
 
-Omegram is a rust-written telegram GUI.
+Omegram is a telegram GUI client written in rust.
 
 State: In development
 
