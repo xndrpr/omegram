@@ -20,7 +20,8 @@ fn main() {
             commands::check_auth,
             commands::request_code,
             commands::sign_in,
-            commands::get_dialogs
+            commands::get_dialogs,
+            commands::logout
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

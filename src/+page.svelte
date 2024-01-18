@@ -3,16 +3,19 @@
   import Login from "./pages/Login.svelte";
   import { invoke } from "@tauri-apps/api/tauri";
   import { endpoint } from "./lib/store";
+  import { cachedAuth, cachedDialogs } from "./lib/cache";
 
   let auth = false;
   let dialogs = [];
 
   onMount(async () => {
-    auth = true;
-    if (auth == false) {
-      switchEndpoint("/login");
-    } else {
-      dialogs = JSON.parse(localStorage.getItem("dialogs"));
+    auth = cachedAuth == true ? true : await invoke("check_auth");
+    localStorage.setItem("auth", auth ? "true" : "false");
+
+    if (auth == true) {
+      dialogs =
+        cachedDialogs.length > 0 ? cachedDialogs : await invoke("get_dialogs");
+      localStorage.setItem("dialogs", JSON.stringify(dialogs));
     }
   });
 
@@ -27,36 +30,48 @@
       <div class="menu-item">
         <button>Chats</button>
       </div>
-    </div>
-    <div class="dialogs">
-      {#each dialogs as dlg}
-        <div class="dialog">
-          <img
-            width="50px"
-            height="50px"
-            style="border-radius: 100%"
-            src={`data:image/png;base64,${btoa(
-              String.fromCharCode(...dlg.photo),
-            )}`}
-            alt="avatar"
-          />
-          <b>{dlg.name}</b>
-        </div>
-      {/each}
-    </div>
+      <div>
+        <button
+          class={auth ? "logout-btn" : "login-btn"}
+          on:click={async () => {
+            auth = !auth;
+            localStorage.setItem("auth", auth ? "true" : "false");
 
-    <div class="chat">
-      <i>Select a chat</i>
+            if (auth == true) {
+              switchEndpoint("/login");
+            } else {
+              await invoke("logout");
+            }
+          }}
+          >{#if auth}
+            Log Out
+          {:else}
+            Log In
+          {/if}</button
+        >
+      </div>
     </div>
+    {#if auth}
+      <div class="dialogs">
+        {#each dialogs as dlg}
+          <div class="dialog">
+            <img
+              width="50px"
+              height="50px"
+              style="border-radius: 100%"
+              src={`data:image/png;base64,${btoa(
+                String.fromCharCode(...dlg.photo),
+              )}`}
+              alt="avatar"
+            />
+            <b>{dlg.name}</b>
+          </div>
+        {/each}
+      </div>
 
-    {#if !auth}
-      <button
-        on:click={() => {
-          switchEndpoint("/login");
-        }}
-      >
-        Log in
-      </button>
+      <div class="chat">
+        <i>Select a chat</i>
+      </div>
     {/if}
   {:else if $endpoint == "/login"}
     <Login />
@@ -73,6 +88,7 @@
     color: #d4d8fd;
     font-family: "Montserrat", sans-serif;
     backdrop-filter: blur(10px);
+    min-height: calc(100vh);
   }
 
   .side-menu {
@@ -86,7 +102,7 @@
     gap: 1rem;
   }
 
-  .side-menu button {
+  .menu-item button {
     padding: 1rem;
     border: none;
     outline: none;
@@ -96,7 +112,7 @@
     transition: all 0.3s ease;
   }
 
-  .side-menu button:hover {
+  .menu-item button:hover {
     background-color: rgba(255, 255, 255, 0.2);
   }
 
@@ -139,5 +155,45 @@
 
   .dialog:hover {
     background-color: rgba(255, 255, 255, 0.2);
+  }
+
+  .logout-btn {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    margin-left: 1.6rem;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    border: none;
+    outline: none;
+    background-color: #ff878793;
+    color: #fff;
+
+    transition: all 0.2s ease;
+  }
+
+  .logout-btn:hover {
+    background-color: #ff8787;
+  }
+
+  .login-btn {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    margin-left: 1.6rem;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    border: none;
+    outline: none;
+    background-color: #8b87ff93;
+    color: #fff;
+
+    transition: all 0.2s ease;
+  }
+
+  .login-btn:hover {
+    background-color: #af87ff;
   }
 </style>

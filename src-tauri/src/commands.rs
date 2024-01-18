@@ -1,7 +1,7 @@
 use grammers_client::{types::UserProfilePhoto, Client, Config};
 use grammers_session::Session;
 use grammers_tl_types::types::messages::DialogsSlice;
-use std::env;
+use std::{env, fs};
 use tauri::utils::config::FsAllowlistConfig;
 
 use crate::{
@@ -87,9 +87,6 @@ pub async fn get_dialogs() -> Vec<Dialog> {
 
         let mut x = 0;
         while let Some(dialog) = dialogs.next().await.unwrap() {
-            // if x >= 5 {
-            //     break;
-            // }
             let chat = dialog.chat().clone();
             if let Some(photo) = &chat.photo_downloadable(false) {
                 let mut download = client.as_ref().unwrap().iter_download(&photo);
@@ -110,4 +107,9 @@ pub async fn get_dialogs() -> Vec<Dialog> {
         return result;
     }
     vec![]
+}
+
+#[tauri::command]
+pub async fn logout() {
+    fs::remove_file("omegram.session").unwrap();
 }
