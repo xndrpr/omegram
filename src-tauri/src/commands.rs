@@ -1,8 +1,6 @@
-use grammers_client::{types::UserProfilePhoto, Client, Config};
+use grammers_client::{Client, Config};
 use grammers_session::Session;
-use grammers_tl_types::types::messages::DialogsSlice;
 use std::{env, fs};
-use tauri::utils::config::FsAllowlistConfig;
 
 use crate::{
     models::dialog::Dialog,
@@ -112,4 +110,31 @@ pub async fn get_dialogs() -> Vec<Dialog> {
 #[tauri::command]
 pub async fn logout() {
     fs::remove_file("omegram.session").unwrap();
+}
+
+#[tauri::command]
+pub async fn get_messages(id: String) -> Vec<String> {
+    let client = CLIENT.lock().await;
+    let mut chats = client.as_ref().unwrap().iter_dialogs();
+
+    while let Some(dialog) = chats.next().await.unwrap() {
+        if dialog.chat().id().to_string() == id {
+            let mut messages = client.as_ref().unwrap().iter_messages(dialog.chat());
+            let mut result: Vec<String> = vec![];
+
+            while let Some(message) = messages.next().await.unwrap() {
+                if result.len() > 100 {
+                    break;
+                }
+                if message.text().to_string().len() > 1 {
+                    result.push(message.text().to_string());
+                }
+            }
+
+            result.reverse();
+            return result;
+        }
+    }
+
+    vec![]
 }

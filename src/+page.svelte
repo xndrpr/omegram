@@ -5,17 +5,18 @@
   import { endpoint } from "./lib/store";
   import { cachedAuth, cachedDialogs } from "./lib/cache";
 
-  let auth = false;
-  let dialogs = [];
+  $: auth = true;
+  $: dialogs = [];
+  $: messages = [];
 
   onMount(async () => {
-    auth = cachedAuth == true ? true : await invoke("check_auth");
+    // auth = cachedAuth == true ? true : await invoke("check_auth");
     localStorage.setItem("auth", auth ? "true" : "false");
 
     if (auth == true) {
-      dialogs =
-        cachedDialogs.length > 0 ? cachedDialogs : await invoke("get_dialogs");
+      dialogs = cachedDialogs;
       localStorage.setItem("dialogs", JSON.stringify(dialogs));
+      messages = JSON.parse(localStorage.getItem("messages"));
     }
   });
 
@@ -59,8 +60,9 @@
           <div
             class="dialog"
             id={dlg.id}
-            on:click={() => {
-              console.log(dlg.id);
+            on:click={async () => {
+              messages = await invoke("get_messages", { id: dlg.id });
+              localStorage.setItem("messages", JSON.stringify(messages));
             }}
           >
             <img
@@ -78,7 +80,16 @@
       </div>
 
       <div class="chat">
-        <i>Select a chat</i>
+        {#if messages.length <= 0}
+          <i>Select a chat</i>
+        {:else}
+          <div class="messages">
+            {#each messages as msg}
+              <div class="msg">
+                {msg}
+              </div>{/each}
+          </div>
+        {/if}
       </div>
     {/if}
   {:else if $endpoint == "/login"}
@@ -130,17 +141,30 @@
 
   .dialogs {
     overflow-y: auto;
+    min-width: fit-content;
     max-height: calc(100vh - 2rem);
   }
 
   .chat {
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-self: start;
     width: 100%;
     padding: 1rem;
     border-radius: 1rem;
     background-color: rgba(255, 255, 255, 0.1);
+    flex-direction: column;
+    gap: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+
+  .msg {
+    width: fit-content;
+    padding: 1rem;
+    margin: 1rem;
+    border-radius: 1rem;
+    background-color: #af87ff;
   }
 
   .dialog {
