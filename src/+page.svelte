@@ -53,8 +53,16 @@
     </div>
     {#if auth}
       <div class="dialogs">
-        {#each dialogs as dlg}
-          <div class="dialog">
+        {#each dialogs as dlg (dlg.id)}
+          <!-- svelte-ignore a11y-click-events-have-key-events -->
+          <!-- svelte-ignore a11y-no-static-element-interactions -->
+          <div
+            class="dialog"
+            id={dlg.id}
+            on:click={() => {
+              console.log(dlg.id);
+            }}
+          >
             <img
               width="50px"
               height="50px"
