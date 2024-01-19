@@ -7,7 +7,6 @@ use crate::{
     tg::{CLIENT, TOKEN},
 };
 
-/* !!! TODO: HANDLE ALL UNWRAPS !!! */
 #[tauri::command]
 pub async fn check_auth() -> bool {
     let api_id = env::var("APP_ID").unwrap().parse().unwrap();
@@ -25,7 +24,11 @@ pub async fn check_auth() -> bool {
         .unwrap(),
     );
 
-    client.as_ref().unwrap().is_authorized().await.unwrap()
+    if let Ok(usr) = client.as_ref().unwrap().get_me().await {
+        return true;
+    }
+
+    false
 }
 
 #[tauri::command]
@@ -102,6 +105,8 @@ pub async fn get_dialogs() -> Vec<Dialog> {
             }
         }
 
+        println!("RESULTIXUS");
+
         return result;
     }
     vec![]
@@ -109,7 +114,25 @@ pub async fn get_dialogs() -> Vec<Dialog> {
 
 #[tauri::command]
 pub async fn logout() {
-    fs::remove_file("omegram.session").unwrap();
+    println!("START");
+    let _ = fs::remove_file("omegram.session");
+
+    let api_id = env::var("APP_ID").unwrap().parse().unwrap();
+    let api_hash = env::var("APP_HASH").unwrap().to_string();
+
+    let mut client = CLIENT.lock().await;
+    *client = Some(
+        Client::connect(Config {
+            session: Session::load_file_or_create("omegram.session").unwrap(),
+            api_id,
+            api_hash: api_hash.clone(),
+            params: Default::default(),
+        })
+        .await
+        .unwrap(),
+    );
+
+    println!("DONE");
 }
 
 #[tauri::command]

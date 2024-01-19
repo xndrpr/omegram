@@ -1,27 +1,54 @@
 <script>
-  import { onMount } from "svelte";
+  import { afterUpdate, onMount } from "svelte";
   import Login from "./pages/Login.svelte";
   import { invoke } from "@tauri-apps/api/tauri";
-  import { endpoint } from "./lib/store";
-  import { cachedAuth, cachedDialogs } from "./lib/cache";
+  import { auth, dialogs, endpoint, messages } from "./lib/store";
 
-  $: auth = true;
-  $: dialogs = [];
-  $: messages = [];
+  let msgs;
+
+  afterUpdate(() => {
+    console.log("afterUpdate");
+    if (msgs) scrollToBottom(msgs);
+  });
+
+  $: if (msgs) {
+    console.log("tick");
+    scrollToBottom(msgs);
+  }
+
+  const scrollToBottom = async (node) => {
+    console.log("Scroll Height Before:", node.scrollHeight);
+    node.scroll({ top: node.scrollHeight, behavior: "smooth" });
+    console.log("Scroll Height After:", node.scrollHeight);
+  };
 
   onMount(async () => {
-    // auth = cachedAuth == true ? true : await invoke("check_auth");
+    console.log($messages);
+    auth.set($auth == true ? true : await invoke("check_auth"));
     localStorage.setItem("auth", auth ? "true" : "false");
 
-    if (auth == true) {
-      dialogs = cachedDialogs;
-      localStorage.setItem("dialogs", JSON.stringify(dialogs));
-      messages = JSON.parse(localStorage.getItem("messages"));
+    if ($auth == true) {
+      localStorage.setItem("dialogs", JSON.stringify($dialogs));
+      let xxx = await invoke("get_dialogs");
+      dialogs.set(xxx);
+
+      messages.set(JSON.parse(localStorage.getItem("messages")));
     }
   });
 
   function switchEndpoint(ep) {
     endpoint.set(ep);
+  }
+
+  async function logout() {
+    auth.set(!$auth);
+    localStorage.setItem("auth", auth ? "true" : "false");
+
+    if ($auth == true) {
+      switchEndpoint("/login");
+    } else {
+      await invoke("logout");
+    }
   }
 </script>
 
@@ -33,18 +60,12 @@
       </div>
       <div>
         <button
-          class={auth ? "logout-btn" : "login-btn"}
+          class={$auth ? "logout-btn" : "login-btn"}
           on:click={async () => {
-            auth = !auth;
-            localStorage.setItem("auth", auth ? "true" : "false");
-
-            if (auth == true) {
-              switchEndpoint("/login");
-            } else {
-              await invoke("logout");
-            }
+            await logout();
+            console.log("HEY");
           }}
-          >{#if auth}
+          >{#if $auth}
             Log Out
           {:else}
             Log In
@@ -52,46 +73,46 @@
         >
       </div>
     </div>
-    {#if auth}
-      <div class="dialogs">
-        {#each dialogs as dlg (dlg.id)}
-          <!-- svelte-ignore a11y-click-events-have-key-events -->
-          <!-- svelte-ignore a11y-no-static-element-interactions -->
-          <div
-            class="dialog"
-            id={dlg.id}
-            on:click={async () => {
-              messages = await invoke("get_messages", { id: dlg.id });
-              localStorage.setItem("messages", JSON.stringify(messages));
-            }}
-          >
-            <img
-              width="50px"
-              height="50px"
-              style="border-radius: 100%"
-              src={`data:image/png;base64,${btoa(
-                String.fromCharCode(...dlg.photo),
-              )}`}
-              alt="avatar"
-            />
-            <b>{dlg.name}</b>
-          </div>
-        {/each}
-      </div>
+    <div class="dialogs">
+      {#each $dialogs as dlg}
+        <!-- svelte-ignore a11y-click-events-have-key-events -->
+        <!-- svelte-ignore a11y-no-static-element-interactions -->
+        <div
+          class="dialog"
+          id={dlg.id}
+          on:click={async () => {
+            messages.set(await invoke("get_messages", { id: dlg.id }));
+            // localStorage.setItem("messages", JSON.stringify(messages));
+          }}
+        >
+          <img
+            width="50px"
+            height="50px"
+            style="border-radius: 100%"
+            src={`data:image/png;base64,${btoa(
+              String.fromCharCode(...dlg.photo),
+            )}`}
+            alt="avatar"
+          />
+          <b>{dlg.name}</b>
+        </div>
+      {/each}
+    </div>
 
-      <div class="chat">
-        {#if messages.length <= 0}
-          <i>Select a chat</i>
-        {:else}
-          <div class="messages">
-            {#each messages as msg}
+    <div class="chat">
+      {#if $messages.length <= 0}
+        <i>Select a chat</i>
+      {:else}
+        <div class="messages" bind:this={msgs}>
+          {#if $messages.length > 0}
+            {#each $messages as msg}
               <div class="msg">
                 {msg}
-              </div>{/each}
-          </div>
-        {/if}
-      </div>
-    {/if}
+              </div>
+            {/each}{/if}
+        </div>
+      {/if}
+    </div>
   {:else if $endpoint == "/login"}
     <Login />
   {:else}
@@ -101,6 +122,7 @@
 
 <style>
   main {
+    flex: 1;
     overflow: hidden;
     padding: 1rem;
     background-color: rgba(1, 5, 33, 0.8);
@@ -147,24 +169,28 @@
 
   .chat {
     display: flex;
-    justify-content: center;
-    align-self: start;
-    width: 100%;
+    flex-direction: column;
+    align-items: center;
     padding: 1rem;
     border-radius: 1rem;
     background-color: rgba(255, 255, 255, 0.1);
-    flex-direction: column;
-    gap: 1rem;
     max-height: calc(100vh - 2rem);
     overflow-y: auto;
   }
 
+  .messages {
+    display: flex;
+    flex-direction: column;
+  }
+
   .msg {
     width: fit-content;
+    max-width: 90%;
     padding: 1rem;
-    margin: 1rem;
+    margin: 0.5rem 1rem;
     border-radius: 1rem;
-    background-color: #af87ff;
+    background-color: rgba(255, 255, 255, 0.1);
+    white-space: pre-wrap;
   }
 
   .dialog {

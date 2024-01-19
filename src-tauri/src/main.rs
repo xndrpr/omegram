@@ -4,7 +4,7 @@ pub mod commands;
 pub mod models;
 pub mod tg;
 
-use std::env;
+use std::{env, fs};
 
 use grammers_client::{Client, Config};
 use grammers_session::Session;

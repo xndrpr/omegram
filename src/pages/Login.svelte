@@ -1,6 +1,6 @@
 <script>
   import { invoke } from "@tauri-apps/api";
-  import { endpoint } from "../lib/store";
+  import { auth, dialogs, endpoint } from "../lib/store";
 
   $: step = 1;
 
@@ -32,10 +32,17 @@
       <button
         on:click={async () => {
           await invoke("sign_in", { code });
+
           localStorage.setItem("auth", "true");
+          auth.set(true);
+
+          dialogs.set(JSON.parse(localStorage.getItem("dialogs")));
 
           nextStep();
           endpoint.set("/");
+
+          dialogs.set(await invoke("get_dialogs"));
+          localStorage.setItem("dialogs", JSON.stringify($dialogs));
         }}>Continue</button
       >
     </div>
