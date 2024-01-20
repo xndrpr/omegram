@@ -33,12 +33,36 @@ pub async fn request_code(phone: String) {
     let mut token = TOKEN.lock().await;
 
     *token = Some(
-        client
+        match client
             .as_ref()
             .unwrap()
             .request_login_code(phone.as_str())
             .await
-            .unwrap(),
+        {
+            Ok(cl) => cl,
+            Err(_) => {
+                let api_id = env::var("APP_ID").unwrap().parse().unwrap();
+                let api_hash = env::var("APP_HASH").unwrap().to_string();
+
+                let mut client = CLIENT.lock().await;
+                *client = Some(
+                    Client::connect(Config {
+                        session: Session::load_file_or_create("omegram.session").unwrap(),
+                        api_id,
+                        api_hash: api_hash.clone(),
+                        params: Default::default(),
+                    })
+                    .await
+                    .unwrap(),
+                );
+                client
+                    .as_ref()
+                    .unwrap()
+                    .request_login_code(phone.as_str())
+                    .await
+                    .unwrap()
+            }
+        },
     );
 }
 
@@ -117,8 +141,7 @@ pub async fn logout() {
 pub async fn get_messages(id: String) -> Vec<Message> {
     let client = CLIENT.lock().await;
     let db = DB.lock().await;
-    // COunt how many seconds it took to get all chats
-    let start = std::time::Instant::now();
+
     let mut chats = client.as_ref().unwrap().iter_dialogs();
 
     while let Some(dialog) = chats.next().await.unwrap() {
@@ -161,8 +184,6 @@ pub async fn get_messages(id: String) -> Vec<Message> {
             }
 
             result.reverse();
-            let elapsed = start.elapsed();
-            println!("Chats: {:?}", elapsed.as_secs());
             return result;
         }
     }

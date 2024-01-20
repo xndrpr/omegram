@@ -22,10 +22,11 @@
   };
 
   onMount(async () => {
-    chat.addEventListener("scroll", handleScroll);
+    if (chat) {
+      chat.addEventListener("scroll", handleScroll);
+    }
 
     auth.set($auth == true ? true : await invoke("check_auth"));
-    console.log($auth);
 
     await invoke("set_setting", {
       key: "auth",
@@ -64,7 +65,7 @@
     auth.set(!$auth);
     await invoke("set_setting", {
       key: "auth",
-      value: auth ? "true" : "false",
+      value: auth ? "false" : "true",
     });
 
     if ($auth == true) {
@@ -95,61 +96,65 @@
         >
       </div>
     </div>
-    <div class="dialogs">
-      {#each $dialogs as dlg}
-        <!-- svelte-ignore a11y-click-events-have-key-events -->
-        <!-- svelte-ignore a11y-no-static-element-interactions -->
-        <div
-          class="dialog"
-          id={dlg.id}
-          on:click={async () => {
-            messages.set(await invoke("get_messages", { id: dlg.id }));
+    {#if $auth}
+      <div class="dialogs">
+        {#if $dialogs.length > 0}
+          {#each $dialogs as dlg}
+            <!-- svelte-ignore a11y-click-events-have-key-events -->
+            <!-- svelte-ignore a11y-no-static-element-interactions -->
+            <div
+              class="dialog"
+              id={dlg.id}
+              on:click={async () => {
+                messages.set(await invoke("get_messages", { id: dlg.id }));
 
-            console.log($messages);
-            setTimeout(() => {
-              try {
-                scrollToBottom(chat);
-              } catch {}
-            });
-          }}
-        >
-          <img
-            width="50px"
-            height="50px"
-            style="border-radius: 100%"
-            src={bytesToPhoto(dlg.photo)}
-            alt="avatar"
-          />
-          <b>{dlg.name}</b>
-        </div>
-      {/each}
-    </div>
+                console.log($messages);
+                setTimeout(() => {
+                  try {
+                    scrollToBottom(chat);
+                  } catch {}
+                });
+              }}
+            >
+              <img
+                width="50px"
+                height="50px"
+                style="border-radius: 100%"
+                src={bytesToPhoto(dlg.photo)}
+                alt="avatar"
+              />
+              <b>{dlg.name}</b>
+            </div>
+          {/each}
+        {/if}
+      </div>
 
-    <div class="chat" bind:this={chat}>
-      {#if $messages.length <= 0}
-        <i>Select a chat</i>
-      {:else}
-        <div class="messages">
-          {#if $messages.length > 0}
-            {#each $messages as msg}
-              <div class="msg">
-                <div class="avatar">
-                  <img
-                    width="50px"
-                    height="50px"
-                    style="border-radius: 100%"
-                    src={bytesToPhoto(msg.avatar)}
-                    alt="avatar"
-                  />
+      <div class="chat" bind:this={chat}>
+        {#if $messages.length <= 0}
+          <i>Select a chat</i>
+        {:else}
+          <div class="messages">
+            {#if $messages.length > 0}
+              {#each $messages as msg}
+                <div class="msg">
+                  <div class="avatar">
+                    <img
+                      width="50px"
+                      height="50px"
+                      style="border-radius: 100%"
+                      src={bytesToPhoto(msg.avatar)}
+                      alt="avatar"
+                    />
+                  </div>
+                  <div class="text">
+                    {msg.text}
+                  </div>
                 </div>
-                <div class="text">
-                  {msg.text}
-                </div>
-              </div>
-            {/each}{/if}
-        </div>
-      {/if}
-    </div>
+              {/each}{/if}
+          </div>
+        {/if}
+      </div>
+    {/if}
   {:else if $endpoint == "/login"}
     <Login />
   {:else}

@@ -33,21 +33,21 @@
         on:click={async () => {
           await invoke("sign_in", { code });
 
-          // await invoke("set_setting", { key: "auth", value: "true" });
+          await invoke("set_setting", { key: "auth", value: "true" });
           auth.set(true);
 
-          // dialogs.set(
-          //   JSON.parse(await invoke("get_setting", { key: "dialogs" })),
-          // );
+          dialogs.set(
+            JSON.parse(await invoke("get_setting", { key: "dialogs" })),
+          );
 
           nextStep();
           endpoint.set("/");
 
           dialogs.set(await invoke("get_dialogs"));
-          // await invoke("set_setting", {
-          //   key: "dialogs",
-          //   value: JSON.stringify(dialogs),
-          // });
+          await invoke("set_setting", {
+            key: "dialogs",
+            value: JSON.stringify(dialogs),
+          });
         }}>Continue</button
       >
     </div>
