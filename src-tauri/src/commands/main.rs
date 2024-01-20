@@ -43,8 +43,6 @@ pub async fn request_code(phone: String) {
             .await
             .unwrap(),
     );
-
-    println!("{}", phone);
 }
 
 #[tauri::command]
@@ -65,12 +63,7 @@ pub async fn sign_in(code: String) -> usize {
         .save_to_file("omegram.session")
     {
         Ok(_) => {}
-        Err(e) => {
-            println!(
-                "NOTE: failed to save the session, will sign out when done: {}",
-                e
-            );
-        }
+        Err(e) => {}
     }
     let mut dialogs = client.as_ref().unwrap().iter_dialogs();
 
@@ -96,7 +89,6 @@ pub async fn get_dialogs() -> Vec<Dialog> {
                     chat.name().to_string(),
                     bytes.clone(),
                 ));
-                println!("{}", x);
                 x += 1;
             }
         }
@@ -108,7 +100,6 @@ pub async fn get_dialogs() -> Vec<Dialog> {
 
 #[tauri::command]
 pub async fn logout() {
-    println!("START");
     let _ = fs::remove_file("omegram.session");
 
     let api_id = env::var("APP_ID").unwrap().parse().unwrap();
@@ -125,8 +116,6 @@ pub async fn logout() {
         .await
         .unwrap(),
     );
-
-    println!("DONE");
 }
 
 #[tauri::command]

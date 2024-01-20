@@ -40,4 +40,21 @@ impl Database {
             )
             .unwrap_or(0);
     }
+
+    pub fn get_chat_history(&self, chat_id: &str) -> Option<String> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT history FROM chats WHERE chat_id = ?")
+            .unwrap();
+        stmt.query_row([chat_id], |row| row.get(0)).unwrap_or(None)
+    }
+
+    pub fn set_chat_history(&self, chat_id: &str, history: &str) {
+        self.conn
+            .execute(
+                "INSERT OR REPLACE INTO chats (chat_id, history) VALUES (?, ?)",
+                [chat_id, history],
+            )
+            .unwrap_or(0);
+    }
 }
