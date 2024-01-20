@@ -14,19 +14,19 @@ Omegram is a telegram GUI client written in rust.
 - Problems with logging out and logging in back
 
 ## To-do
-- Chats
-- Messages
-- ~~Sending messages~~
-- ~~Photos~~
-- ~~Videos~~
-- ~~Sending photos~~
-- ~~Sending videos~~
-- ~~Logging in with qr-code~~
-- ~~Edit message~~
-- ~~Reactions~~
-- ~~Markdown~~
-- ~~Code highlight~~
-- ~~Settings~~
+- ~~Chats~~
+- ~~Messages~~
+- Sending messages
+- Photos
+- Videos
+- Sending photos
+- Sending videos
+- Logging in with qr-code
+- Edit message
+- Reactions
+- Markdown
+- Code highlight
+- Settings
 
 # Screenshots
 
