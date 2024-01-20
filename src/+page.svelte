@@ -4,33 +4,20 @@
   import { invoke } from "@tauri-apps/api/tauri";
   import { auth, dialogs, endpoint, messages } from "./lib/store";
 
-  let msgs;
-
-  afterUpdate(() => {
-    console.log("afterUpdate");
-    if (msgs) scrollToBottom(msgs);
-  });
-
-  $: if (msgs) {
-    console.log("tick");
-    scrollToBottom(msgs);
-  }
+  let chat;
 
   const scrollToBottom = async (node) => {
-    console.log("Scroll Height Before:", node.scrollHeight);
     node.scroll({ top: node.scrollHeight, behavior: "smooth" });
-    console.log("Scroll Height After:", node.scrollHeight);
   };
 
   onMount(async () => {
-    console.log($messages);
     auth.set($auth == true ? true : await invoke("check_auth"));
     localStorage.setItem("auth", auth ? "true" : "false");
 
     if ($auth == true) {
-      localStorage.setItem("dialogs", JSON.stringify($dialogs));
-      let xxx = await invoke("get_dialogs");
-      dialogs.set(xxx);
+      // let xxx = await invoke("get_dialogs");
+      // dialogs.set(xxx);
+      // localStorage.setItem("dialogs", JSON.stringify(xxx));
 
       messages.set(JSON.parse(localStorage.getItem("messages")));
     }
@@ -38,6 +25,10 @@
 
   function switchEndpoint(ep) {
     endpoint.set(ep);
+  }
+
+  function bytesToPhoto(bytes) {
+    return `data:image/png;base64,${btoa(String.fromCharCode(...bytes))}`;
   }
 
   async function logout() {
@@ -63,7 +54,6 @@
           class={$auth ? "logout-btn" : "login-btn"}
           on:click={async () => {
             await logout();
-            console.log("HEY");
           }}
           >{#if $auth}
             Log Out
@@ -82,16 +72,20 @@
           id={dlg.id}
           on:click={async () => {
             messages.set(await invoke("get_messages", { id: dlg.id }));
-            // localStorage.setItem("messages", JSON.stringify(messages));
+
+            console.log($messages);
+            setTimeout(() => {
+              try {
+                scrollToBottom(chat);
+              } catch {}
+            });
           }}
         >
           <img
             width="50px"
             height="50px"
             style="border-radius: 100%"
-            src={`data:image/png;base64,${btoa(
-              String.fromCharCode(...dlg.photo),
-            )}`}
+            src={bytesToPhoto(dlg.photo)}
             alt="avatar"
           />
           <b>{dlg.name}</b>
@@ -99,15 +93,26 @@
       {/each}
     </div>
 
-    <div class="chat">
+    <div class="chat" bind:this={chat}>
       {#if $messages.length <= 0}
         <i>Select a chat</i>
       {:else}
-        <div class="messages" bind:this={msgs}>
+        <div class="messages">
           {#if $messages.length > 0}
             {#each $messages as msg}
               <div class="msg">
-                {msg}
+                <div class="avatar">
+                  <img
+                    width="50px"
+                    height="50px"
+                    style="border-radius: 100%"
+                    src={bytesToPhoto(msg.avatar)}
+                    alt="avatar"
+                  />
+                </div>
+                <div class="text">
+                  {msg.text}
+                </div>
               </div>
             {/each}{/if}
         </div>
@@ -168,6 +173,7 @@
   }
 
   .chat {
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -184,6 +190,10 @@
   }
 
   .msg {
+    display: flex;
+  }
+
+  .msg .text {
     width: fit-content;
     max-width: 90%;
     padding: 1rem;

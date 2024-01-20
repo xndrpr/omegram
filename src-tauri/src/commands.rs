@@ -1,11 +1,24 @@
-use grammers_client::{Client, Config};
+use grammers_client::{
+    types::{message, Downloadable},
+    Client, Config,
+};
 use grammers_session::Session;
 use std::{env, fs};
 
 use crate::{
-    models::dialog::Dialog,
+    models::{dialog::Dialog, message::Message},
     tg::{CLIENT, TOKEN},
 };
+
+pub async fn get_photo(client: &Client, photo: &Downloadable) -> Vec<u8> {
+    let mut download = client.iter_download(&photo);
+    let mut bytes = Vec::new();
+    while let Some(chunk) = download.next().await.unwrap() {
+        bytes.extend(chunk);
+    }
+
+    return bytes;
+}
 
 #[tauri::command]
 pub async fn check_auth() -> bool {
@@ -90,22 +103,17 @@ pub async fn get_dialogs() -> Vec<Dialog> {
         while let Some(dialog) = dialogs.next().await.unwrap() {
             let chat = dialog.chat().clone();
             if let Some(photo) = &chat.photo_downloadable(false) {
-                let mut download = client.as_ref().unwrap().iter_download(&photo);
-                let mut bytes = Vec::new();
-                while let Some(chunk) = download.next().await.unwrap() {
-                    bytes.extend(chunk);
-                }
+                let bytes = get_photo(client.as_ref().unwrap(), &photo).await;
 
                 result.push(Dialog::new(
                     chat.id().to_string(),
                     chat.name().to_string(),
                     bytes.clone(),
                 ));
+                println!("{}", x);
                 x += 1;
             }
         }
-
-        println!("RESULTIXUS");
 
         return result;
     }
@@ -136,21 +144,31 @@ pub async fn logout() {
 }
 
 #[tauri::command]
-pub async fn get_messages(id: String) -> Vec<String> {
+pub async fn get_messages(id: String) -> Vec<Message> {
     let client = CLIENT.lock().await;
     let mut chats = client.as_ref().unwrap().iter_dialogs();
 
     while let Some(dialog) = chats.next().await.unwrap() {
         if dialog.chat().id().to_string() == id {
             let mut messages = client.as_ref().unwrap().iter_messages(dialog.chat());
-            let mut result: Vec<String> = vec![];
+            let mut result: Vec<Message> = vec![];
 
             while let Some(message) = messages.next().await.unwrap() {
-                if result.len() > 100 {
+                if result.len() > 10 {
                     break;
                 }
                 if message.text().to_string().len() > 1 {
-                    result.push(message.text().to_string());
+                    if let Some(photo) = message.sender().unwrap().photo_downloadable(false) {
+                        let bytes = get_photo(client.as_ref().unwrap(), &photo).await;
+
+                        let msg = Message::new(
+                            message.id().to_string(),
+                            message.text().to_string(),
+                            bytes.clone(),
+                        );
+
+                        result.push(msg);
+                    }
                 }
             }
 
