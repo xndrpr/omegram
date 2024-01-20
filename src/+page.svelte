@@ -4,13 +4,26 @@
   import { invoke } from "@tauri-apps/api/tauri";
   import { auth, dialogs, endpoint, messages } from "./lib/store";
 
+  $: isLoadingMessages = false;
   let chat;
 
   const scrollToBottom = async (node) => {
     node.scroll({ top: node.scrollHeight, behavior: "smooth" });
   };
 
+  const handleScroll = async () => {
+    if (chat.scrollTop === 0 && !isLoadingMessages) {
+      console.log("Reached top of chat, fetch older messages");
+      // wait for 2 seconds
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      isLoadingMessages = true;
+      // TODO: Implement logic to fetch older messages
+    }
+  };
+
   onMount(async () => {
+    chat.addEventListener("scroll", handleScroll);
+
     auth.set($auth == true ? true : await invoke("check_auth"));
     console.log($auth);
 
@@ -193,7 +206,6 @@
 
   .chat {
     flex-grow: 1;
-    display: flex;
     flex-direction: column;
     align-items: center;
     padding: 1rem;

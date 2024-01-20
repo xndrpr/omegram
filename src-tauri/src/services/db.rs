@@ -1,6 +1,6 @@
 use std::path;
 
-use rusqlite::Connection;
+use rusqlite::{params, Connection, ToSql};
 
 pub struct Database {
     pub conn: Connection,
@@ -21,7 +21,30 @@ impl Database {
             (),
         )
         .unwrap_or(0);
+
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS photos (id TEXT UNIQUE, photo BLOB);",
+            (),
+        )
+        .unwrap_or(0);
         Self { conn: conn }
+    }
+
+    pub fn get_photo(&self, id: &str) -> Option<Vec<u8>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT photo FROM photos WHERE id = ?")
+            .unwrap();
+        stmt.query_row([id], |row| row.get(0)).unwrap_or(None)
+    }
+
+    pub fn set_photo(&self, id: &str, photo: Vec<u8>) {
+        self.conn
+            .execute(
+                "INSERT OR REPLACE INTO photos (id, photo) VALUES (?, ?)",
+                params![id, &photo],
+            )
+            .unwrap_or(0);
     }
 
     pub fn get_setting(&self, key: &str) -> Option<String> {

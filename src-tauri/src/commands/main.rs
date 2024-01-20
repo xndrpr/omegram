@@ -116,6 +116,9 @@ pub async fn logout() {
 #[tauri::command]
 pub async fn get_messages(id: String) -> Vec<Message> {
     let client = CLIENT.lock().await;
+    let db = DB.lock().await;
+    // COunt how many seconds it took to get all chats
+    let start = std::time::Instant::now();
     let mut chats = client.as_ref().unwrap().iter_dialogs();
 
     while let Some(dialog) = chats.next().await.unwrap() {
@@ -128,21 +131,38 @@ pub async fn get_messages(id: String) -> Vec<Message> {
                     break;
                 }
                 if message.text().to_string().len() > 1 {
-                    if let Some(photo) = message.sender().unwrap().photo_downloadable(false) {
-                        let bytes = get_photo(client.as_ref().unwrap(), &photo).await;
+                    if let Some(sender) = message.sender() {
+                        if let Some(photo) = sender.photo_downloadable(false) {
+                            let bytes;
+                            if let Some(b) = db
+                                .as_ref()
+                                .unwrap()
+                                .get_photo(&message.sender().unwrap().id().to_string())
+                            {
+                                bytes = b;
+                            } else {
+                                bytes = get_photo(client.as_ref().unwrap(), &photo).await;
+                                db.as_ref().unwrap().set_photo(
+                                    &message.sender().unwrap().id().to_string(),
+                                    bytes.clone(),
+                                );
+                            }
 
-                        let msg = Message::new(
-                            message.id().to_string(),
-                            message.text().to_string(),
-                            bytes.clone(),
-                        );
+                            let msg = Message::new(
+                                message.id().to_string(),
+                                message.text().to_string(),
+                                bytes.clone(),
+                            );
 
-                        result.push(msg);
+                            result.push(msg);
+                        }
                     }
                 }
             }
 
             result.reverse();
+            let elapsed = start.elapsed();
+            println!("Chats: {:?}", elapsed.as_secs());
             return result;
         }
     }
