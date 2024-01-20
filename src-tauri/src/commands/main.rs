@@ -75,7 +75,6 @@ pub async fn get_dialogs() -> Vec<Dialog> {
         let mut result = vec![];
         let mut dialogs = client.as_ref().unwrap().iter_dialogs();
 
-        let mut x = 0;
         while let Some(dialog) = dialogs.next().await.unwrap() {
             let chat = dialog.chat().clone();
             if let Some(photo) = &chat.photo_downloadable(false) {
@@ -86,7 +85,6 @@ pub async fn get_dialogs() -> Vec<Dialog> {
                     chat.name().to_string(),
                     bytes.clone(),
                 ));
-                x += 1;
             }
         }
 
