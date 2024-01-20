@@ -6,8 +6,8 @@ use grammers_session::Session;
 use std::{env, fs};
 
 use crate::{
+    constants::{CLIENT, DB, TOKEN},
     models::{dialog::Dialog, message::Message},
-    tg::{CLIENT, TOKEN},
 };
 
 pub async fn get_photo(client: &Client, photo: &Downloadable) -> Vec<u8> {
@@ -22,26 +22,12 @@ pub async fn get_photo(client: &Client, photo: &Downloadable) -> Vec<u8> {
 
 #[tauri::command]
 pub async fn check_auth() -> bool {
-    let api_id = env::var("APP_ID").unwrap().parse().unwrap();
-    let api_hash = env::var("APP_HASH").unwrap().to_string();
-
-    let mut client = CLIENT.lock().await;
-    *client = Some(
-        Client::connect(Config {
-            session: Session::load_file_or_create("omegram.session").unwrap(),
-            api_id,
-            api_hash: api_hash.clone(),
-            params: Default::default(),
-        })
-        .await
-        .unwrap(),
-    );
-
-    if let Ok(usr) = client.as_ref().unwrap().get_me().await {
-        return true;
-    }
-
-    false
+    let db = DB.lock().await;
+    db.as_ref()
+        .unwrap()
+        .get_setting("auth")
+        .unwrap_or("false".to_string())
+        == "true"
 }
 
 #[tauri::command]

@@ -1,14 +1,16 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 pub mod commands;
+pub mod constants;
 pub mod models;
-pub mod tg;
+pub mod services;
 
-use std::{env, fs};
+use std::env;
 
+use constants::{CLIENT, DB};
 use grammers_client::{Client, Config};
 use grammers_session::Session;
-use tg::CLIENT;
+use services::db::Database;
 
 async fn initialize() {
     dotenv::dotenv().ok();
@@ -30,6 +32,9 @@ async fn initialize() {
         .await
         .unwrap(),
     );
+
+    let mut db = DB.lock().await;
+    *db = Some(Database::new())
 }
 #[tokio::main]
 async fn main() {
@@ -37,12 +42,15 @@ async fn main() {
 
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
-            commands::check_auth,
-            commands::request_code,
-            commands::sign_in,
-            commands::get_dialogs,
-            commands::logout,
-            commands::get_messages
+            commands::main::check_auth,
+            commands::main::request_code,
+            commands::main::sign_in,
+            commands::main::get_dialogs,
+            commands::main::logout,
+            commands::main::get_messages,
+            commands::database::get_setting,
+            commands::database::set_setting,
+            commands::database::update_dialogs
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -12,14 +12,30 @@
 
   onMount(async () => {
     auth.set($auth == true ? true : await invoke("check_auth"));
-    localStorage.setItem("auth", auth ? "true" : "false");
+    console.log($auth);
+
+    await invoke("set_setting", {
+      key: "auth",
+      value: auth ? "true" : "false",
+    });
 
     if ($auth == true) {
-      // let xxx = await invoke("get_dialogs");
-      // dialogs.set(xxx);
-      // localStorage.setItem("dialogs", JSON.stringify(xxx));
+      let needed = await invoke("update_dialogs");
+      console.log(needed);
+      if (needed) {
+        // let dlgs = await invoke("get_dialogs");
+        let dlgs = JSON.parse(localStorage.getItem("dialogs"));
+        dialogs.set(dlgs);
+        console.log(dialogs);
+        await invoke("set_setting", {
+          key: "dialogs",
+          value: JSON.stringify(dlgs),
+        });
+      }
 
-      messages.set(JSON.parse(localStorage.getItem("messages")));
+      messages.set(
+        JSON.parse(await invoke("get_setting", { key: "messages" })),
+      );
     }
   });
 
@@ -33,7 +49,10 @@
 
   async function logout() {
     auth.set(!$auth);
-    localStorage.setItem("auth", auth ? "true" : "false");
+    await invoke("set_setting", {
+      key: "auth",
+      value: auth ? "true" : "false",
+    });
 
     if ($auth == true) {
       switchEndpoint("/login");
