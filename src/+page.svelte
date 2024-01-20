@@ -1,31 +1,64 @@
 <script>
-  import { afterUpdate, onMount } from "svelte";
+  import { afterUpdate, onMount, tick } from "svelte";
   import Login from "./pages/Login.svelte";
   import { invoke } from "@tauri-apps/api/tauri";
   import { auth, dialogs, endpoint, messages } from "./lib/store";
 
   $: isLoadingMessages = false;
   let chat;
+  let selectedChatId = null;
+  let messageOffset = 0;
+  const messageLimit = 15;
 
   const scrollToBottom = async (node) => {
     node.scroll({ top: node.scrollHeight, behavior: "smooth" });
   };
 
   const handleScroll = async () => {
-    if (chat.scrollTop === 0 && !isLoadingMessages) {
+    console.log(chat.scrollTop);
+    if (chat.scrollTop <= 200 && !isLoadingMessages) {
       console.log("Reached top of chat, fetch older messages");
-      // wait for 2 seconds
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      console.log(messageOffset);
+      console.log(messageLimit);
       isLoadingMessages = true;
-      // TODO: Implement logic to fetch older messages
+
+      const previousScrollHeight = chat.scrollHeight;
+
+      const olderMessages = await invoke("get_messages", {
+        id: selectedChatId,
+        offset: messageOffset,
+        limit: messageLimit,
+      });
+      messages.update((msgs) => [...olderMessages, ...msgs]);
+      messageOffset += messageLimit;
+
+      await tick();
+
+      const currentScrollHeight = chat.scrollHeight;
+      chat.scrollTop += currentScrollHeight - previousScrollHeight;
+
+      isLoadingMessages = false;
     }
   };
 
-  onMount(async () => {
-    if (chat) {
-      chat.addEventListener("scroll", handleScroll);
-    }
+  async function selectChat(dlg) {
+    selectedChatId = dlg.id;
+    messages.set(
+      await invoke("get_messages", {
+        id: dlg.id,
+        offset: messageOffset,
+        limit: messageLimit,
+      }),
+    );
+    messageOffset += messageLimit;
 
+    // wait for messages to load
+    chat.addEventListener("scroll", handleScroll);
+    await tick();
+    scrollToBottom(chat);
+  }
+
+  onMount(async () => {
     auth.set($auth == true ? true : await invoke("check_auth"));
 
     await invoke("set_setting", {
@@ -40,7 +73,6 @@
         // let dlgs = await invoke("get_dialogs");
         let dlgs = JSON.parse(localStorage.getItem("dialogs"));
         dialogs.set(dlgs);
-        console.log(dialogs);
         await invoke("set_setting", {
           key: "dialogs",
           value: JSON.stringify(dlgs),
@@ -74,6 +106,12 @@
       await invoke("logout");
     }
   }
+
+  setTimeout(() => {
+    try {
+      scrollToBottom(chat);
+    } catch {}
+  });
 </script>
 
 <main class="container">
@@ -101,19 +139,13 @@
         {#if $dialogs.length > 0}
           {#each $dialogs as dlg}
             <!-- svelte-ignore a11y-click-events-have-key-events -->
-            <!-- svelte-ignore a11y-no-static-element-interactions -->
             <div
+              role="button"
+              tabindex={dlg.id}
               class="dialog"
               id={dlg.id}
               on:click={async () => {
-                messages.set(await invoke("get_messages", { id: dlg.id }));
-
-                console.log($messages);
-                setTimeout(() => {
-                  try {
-                    scrollToBottom(chat);
-                  } catch {}
-                });
+                await selectChat(dlg);
               }}
             >
               <img
@@ -150,7 +182,10 @@
                     {msg.text}
                   </div>
                 </div>
-              {/each}{/if}
+              {/each}
+            {:else}
+              No messages
+            {/if}
           </div>
         {/if}
       </div>
