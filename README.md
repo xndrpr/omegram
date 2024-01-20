@@ -11,7 +11,7 @@ Omegram is a telegram GUI client written in rust.
 
 ## Known problems
 - Low perfomance
-- Problems with logging out and loggin in back
+- Problems with logging out and logging in back
 
 ## To-do
 - Chats
