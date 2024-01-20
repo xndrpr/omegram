@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-Omegram is a telegram GUI client written in rust.
+Omegram is a telegram GUI client written in rust
 </p>
 
 
