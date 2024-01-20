@@ -30,4 +30,11 @@ Omegram is a telegram GUI client written in rust.
 
 # Screenshots
 
-![Screenshot](<Group 48.jpg>)
+![Screenshot](telegram-cloud-photo-size-2-5285193313881806071-y.jpg)
+
+# Credits
+- Language: [Rust](https://rust-lang.org/)
+
+- UI: [Tauri](https://tauri.app/)
+
+- Telegram API: [Gramme-rs](https://gramme.rs/)
