@@ -15,6 +15,12 @@ impl Database {
             (),
         )
         .unwrap_or(0);
+
+        conn.execute(
+            "CREATE TABLE IF NOT EXISTS chats (chat_id TEXT UNIQUE, history TEXT);",
+            (),
+        )
+        .unwrap_or(0);
         Self { conn: conn }
     }
 
