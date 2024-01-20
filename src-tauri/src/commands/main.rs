@@ -1,7 +1,4 @@
-use grammers_client::{
-    types::{message, Downloadable},
-    Client, Config,
-};
+use grammers_client::{types::Downloadable, Client, Config};
 use grammers_session::Session;
 use std::{env, fs};
 
@@ -63,7 +60,7 @@ pub async fn sign_in(code: String) -> usize {
         .save_to_file("omegram.session")
     {
         Ok(_) => {}
-        Err(e) => {}
+        Err(_e) => {}
     }
     let mut dialogs = client.as_ref().unwrap().iter_dialogs();
 
