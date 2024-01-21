@@ -139,6 +139,7 @@ pub async fn logout() {
 
 #[tauri::command]
 pub async fn get_messages(id: String, offset: usize, limit: usize) -> Vec<Message> {
+    println!("{}:{}", offset, limit);
     let client = CLIENT.lock().await;
     let db = DB.lock().await;
 
@@ -148,10 +149,10 @@ pub async fn get_messages(id: String, offset: usize, limit: usize) -> Vec<Messag
         if dialog.chat().id().to_string() == id {
             let mut messages = client.as_ref().unwrap().iter_messages(dialog.chat());
             let mut result: Vec<Message> = vec![];
-            let mut skipped = 0;
+            let mut skipped = offset;
 
             while let Some(message) = messages.next().await.unwrap() {
-                if skipped < offset {
+                if skipped <= offset {
                     skipped += 1;
                     continue;
                 }
