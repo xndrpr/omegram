@@ -15,11 +15,7 @@
   };
 
   const handleScroll = async () => {
-    console.log(chat.scrollTop);
     if (chat.scrollTop <= 200 && !isLoadingMessages) {
-      console.log("Reached top of chat, fetch older messages");
-      console.log(messageOffset);
-      console.log(messageLimit);
       isLoadingMessages = true;
 
       const previousScrollHeight = chat.scrollHeight;
@@ -38,21 +34,35 @@
       chat.scrollTop += currentScrollHeight - previousScrollHeight;
 
       isLoadingMessages = false;
+
+      await invoke("set_chat_history", {
+        id: selectedChatId,
+        history: JSON.stringify($messages),
+      });
     }
   };
 
   async function selectChat(dlg) {
     selectedChatId = dlg.id;
-    messages.set(
-      await invoke("get_messages", {
-        id: dlg.id,
-        offset: messageOffset,
-        limit: messageLimit,
-      }),
-    );
+
+    let msgs = await invoke("get_chat_history", { id: dlg.id });
+    if (msgs) {
+      messages.set(JSON.parse(msgs));
+    } else {
+      messages.set(
+        await invoke("get_messages", {
+          id: dlg.id,
+          offset: messageOffset,
+          limit: messageLimit,
+        }),
+      );
+    }
+    await invoke("set_chat_history", {
+      id: dlg.id,
+      history: JSON.stringify($messages),
+    });
     messageOffset += messageLimit;
 
-    // wait for messages to load
     chat.addEventListener("scroll", handleScroll);
     await tick();
     scrollToBottom(chat);
@@ -68,7 +78,6 @@
 
     if ($auth == true) {
       let needed = await invoke("update_dialogs");
-      console.log(needed);
       if (needed) {
         // let dlgs = await invoke("get_dialogs");
         let dlgs = JSON.parse(localStorage.getItem("dialogs"));

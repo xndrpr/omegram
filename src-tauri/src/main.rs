@@ -50,7 +50,9 @@ async fn main() {
             commands::main::get_messages,
             commands::database::get_setting,
             commands::database::set_setting,
-            commands::database::update_dialogs
+            commands::database::update_dialogs,
+            commands::database::get_chat_history,
+            commands::database::set_chat_history
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
