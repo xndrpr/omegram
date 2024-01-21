@@ -11,7 +11,10 @@
   const messageLimit = 15;
 
   const scrollToBottom = async (node) => {
-    node.scroll({ top: node.scrollHeight, behavior: "smooth" });
+    node.scroll({
+      top: node.scrollHeight,
+      behavior: "instant",
+    });
   };
 
   const handleScroll = async () => {
