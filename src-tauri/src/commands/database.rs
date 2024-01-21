@@ -1,4 +1,4 @@
-use crate::{constants::DB, models::message::Message};
+use crate::constants::DB;
 
 #[tauri::command]
 pub async fn get_setting(key: String) -> String {
@@ -31,7 +31,6 @@ pub async fn get_chat_history(id: String) -> String {
 
 #[tauri::command]
 pub async fn set_chat_history(id: String, history: String) {
-    println!("{}", history);
     let db = DB.lock().await;
     db.as_ref().unwrap().set_chat_history(&id, &history);
 }

@@ -18,7 +18,7 @@ Omegram is a telegram GUI client written in rust
 - ~~Messages~~
 - ~~Sqlite database~~
 - ~~Pagination of messages~~
-- Caching chat history
+- ~~Caching chat history~~
 - Sending messages
 - Photos
 - Videos
