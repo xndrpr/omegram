@@ -4,7 +4,10 @@ use std::{env, fs};
 
 use crate::{
     constants::{CLIENT, DB, TOKEN},
-    models::{dialog::Dialog, message::Message},
+    models::{
+        dialog::{self, Dialog},
+        message::Message,
+    },
 };
 
 pub async fn get_photo(client: &Client, photo: &Downloadable) -> Vec<u8> {
@@ -145,7 +148,27 @@ pub async fn get_messages(id: String, offset: usize, limit: usize) -> Vec<Messag
 
     let mut chats = client.as_ref().unwrap().iter_dialogs();
 
-    while let Some(dialog) = chats.next().await.unwrap() {
+    while let Some(dialog) = match chats.next().await {
+        Ok(dl) => dl,
+        Err(_) => {
+            let api_id = env::var("APP_ID").unwrap().parse().unwrap();
+            let api_hash = env::var("APP_HASH").unwrap().to_string();
+
+            let mut client = CLIENT.lock().await;
+            *client = Some(
+                Client::connect(Config {
+                    session: Session::load_file_or_create("omegram.session").unwrap(),
+                    api_id,
+                    api_hash: api_hash.clone(),
+                    params: Default::default(),
+                })
+                .await
+                .unwrap(),
+            );
+            chats = client.as_ref().unwrap().iter_dialogs();
+            chats.next().await.unwrap()
+        }
+    } {
         if dialog.chat().id().to_string() == id {
             let mut messages = client.as_ref().unwrap().iter_messages(dialog.chat());
             let mut result: Vec<Message> = vec![];

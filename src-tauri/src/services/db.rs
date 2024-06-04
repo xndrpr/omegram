@@ -1,6 +1,6 @@
 use std::path;
 
-use rusqlite::{params, Connection, ToSql};
+use rusqlite::{params, Connection};
 
 pub struct Database {
     pub conn: Connection,
