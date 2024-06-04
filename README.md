@@ -24,7 +24,7 @@ Omegram is a telegram GUI client written in rust
 - Videos
 - Sending photos
 - Sending videos
-- Logging in with qr-code
+- ~~Logging in with qr-code~~
 - Edit message
 - Reactions
 - Markdown
