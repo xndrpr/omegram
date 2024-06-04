@@ -9,6 +9,7 @@ pub mod helpers;
 use std::env;
 
 use constants::{ DB, TELEGRAM };
+use grammers_client::{ Client, Config };
 use helpers::telegram_helper::TelegramHelper;
 use log::error;
 use services::db::Database;
