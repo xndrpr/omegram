@@ -69,6 +69,8 @@
 @layer base {
   * {
     @apply border-border;
+    scroll-behavior: smooth;
+    scrollbar-color: #000 #fff;
   }
 
   body {

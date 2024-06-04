@@ -14,7 +14,6 @@ export default function Phone() {
   });
 
   async function sendCode() {
-    console.log(phone)
     await invoke("request_code", { phone: phone });
     navigate('/code')
   }
