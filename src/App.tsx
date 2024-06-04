@@ -55,7 +55,7 @@ function App() {
         ))}
       </div>
       <div className="h-full w-full">
-      {dialogs?.length}
+      <p className="flex justify-center items-center h-screen">Select a chat to start messaging</p>
       </div>
     </div>
   );
