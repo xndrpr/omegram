@@ -1,7 +1,39 @@
-# Tauri + React + Typescript
+<h1 align="center">Ω Omegram</h1>
 
-This template should help get you started developing with Tauri, React and Typescript in Vite.
+<p align="center">
+<img width="128px" height="128px" src="logo.png"/>
+</p>
 
-## Recommended IDE Setup
+<p align="center">
+Omegram is a telegram GUI client written in rust
+</p>
 
-- [VS Code](https://code.visualstudio.com/) + [Tauri](https://marketplace.visualstudio.com/items?itemName=tauri-apps.tauri-vscode) + [rust-analyzer](https://marketplace.visualstudio.com/items?itemName=rust-lang.rust-analyzer)
+
+## Known problems
+- Low perfomance
+- Problems with logging out and logging in back
+
+## Todo
+- ~~Chats~~
+- ~~Messages~~
+- ~~Sqlite database~~
+- ~~Pagination of messages~~
+- ~~Caching chat history~~
+- Sending messages
+- Photos
+- Videos
+- Sending photos
+- Sending videos
+- Logging in with qr-code
+- Edit message
+- Reactions
+- Markdown
+- Code highlight
+- Settings
+
+# Credits
+- Language: [Rust](https://rust-lang.org/)
+
+- UI: [Tauri](https://tauri.app/)
+
+- Telegram API: [Gramme-rs](https://gramme.rs/)
