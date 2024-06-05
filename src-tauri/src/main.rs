@@ -59,6 +59,7 @@ async fn main() {
                 commands::main::check_auth,
                 commands::main::get_dialogs,
                 commands::main::get_messages,
+                commands::main::send_message,
                 commands::database::get_setting,
                 commands::database::set_setting,
                 commands::database::update_dialogs,

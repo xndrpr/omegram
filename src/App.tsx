@@ -10,11 +10,12 @@ function App() {
   const navigate = useNavigate();
   const [dialogs, setDialogs] = useState<any>();
   const [selectedDialog, setSelectedDialog] = useState();
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<any[]>([]);
   const [offset, setOffset] = useState(0);
   const limit = 15;
 
   const endRef = useRef(null);
+  const [message, setMessage] = useState("");
 
   useEffect(() => {
     async function initialize() {
@@ -75,6 +76,21 @@ function App() {
     }
   }, [messages]);
 
+  async function sendMessage() {
+    if (!selectedDialog) return;
+    if (!(selectedDialog as any).id) return;
+
+    const result: any = await invoke("send_message", {
+      id: (selectedDialog as any).id,
+      message: message,
+    });
+
+    if (result) {
+      setMessages((prev) => [...prev, result]);
+      setMessage("")
+    }
+  }
+
   return (
     <div className="dark h-screen w-screen grid grid-cols-1 justify-center items-center bg-black text-white">
       <div className="dark col-end-1 h-full max-h-screen overflow-auto w-64">
@@ -123,8 +139,12 @@ function App() {
               <input
                 className="w-full p-2 outline-none bg-black border-2 border-gray-800"
                 placeholder="Write a message..."
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
               />
-              <button className="bg-gray-800">Send</button>
+              <button onClick={sendMessage} className="bg-gray-800">
+                Send
+              </button>
             </div>
           </div>
         )}

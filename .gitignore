@@ -27,3 +27,4 @@ dist-ssr
 **/**.session
 **/**.vscode
 **/**.sqlite
+**/**.sqlite-journal

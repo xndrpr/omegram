@@ -4,7 +4,7 @@ use grammers_client::{ types::{ Downloadable, LoginToken }, Client, Config, Init
 use grammers_session::Session;
 use grammers_tl_types as tl;
 
-use crate::{ constants::DB, models::{dialog::Dialog, message::Message} };
+use crate::{ constants::DB, models::{ dialog::Dialog, message::Message } };
 
 pub struct TelegramHelper {
     pub client: Client,
@@ -182,5 +182,31 @@ impl TelegramHelper {
         }
 
         vec![]
+    }
+
+    pub async fn send_message(&self, id: String, message: String) -> Result<Message, bool> {
+        let mut chats = self.client.iter_dialogs();
+
+        while let Some(dialog) = chats.next().await.unwrap() {
+            if dialog.chat().id().to_string() == id {
+                if let Some(result) = self.client.send_message(dialog.chat(), message.clone()).await.ok() {
+                    if let Some(sender) = result.sender() {
+                        if let Some(photo) = sender.photo_downloadable(false) {
+                            let bytes = self.get_photo(&photo).await;
+
+                            let msg = Message::new(
+                                result.id().to_string(),
+                                result.text().to_string(),
+                                bytes.clone()
+                            );
+
+                            return Ok(msg);
+                        }
+                    }
+                }
+            }
+        }
+
+        return Err(false);
     }
 }
