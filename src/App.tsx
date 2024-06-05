@@ -9,6 +9,10 @@ function App() {
   const { store } = useContext(Context);
   const navigate = useNavigate();
   const [dialogs, setDialogs] = useState<any>();
+  const [selectedDialog, setSelectedDialog] = useState();
+  const [messages, setMessages] = useState([]);
+  const [offset, setOffset] = useState(0);
+  const limit = 15;
 
   useEffect(() => {
     async function initialize() {
@@ -38,12 +42,41 @@ function App() {
     return `data:image/png;base64,${btoa(String.fromCharCode(...bytes))}`;
   }
 
+  async function selectChat(dialog: any) {
+    setSelectedDialog(dialog);
+
+    const response = await invoke("get_chat_history", { id: dialog.id });
+
+    if (response && (response as any)[0].text) {
+      setMessages(JSON.parse(response.toString()));
+    } else {
+      setMessages(
+        await invoke("get_messages", {
+          id: dialog.id,
+          offset: offset,
+          limit: limit,
+        })
+      );
+      await invoke("set_chat_history", {
+        id: dialog.id,
+        history: JSON.stringify(messages),
+      });
+      setOffset((prev) => prev + limit);
+      console.log(messages);
+    }
+  }
+
   return (
     <div className="dark h-screen w-screen grid grid-cols-1 justify-center items-center bg-black text-white">
       <div className="dark col-end-1 h-full max-h-screen overflow-auto w-64">
-        {dialogs && dialogs.map((dialog: any) => (
-          <button className="w-full flex justify-start gap-2 items-center border-b-2 border-r-2 border-gray-800 rounded-md p-3">
-            <img
+        {dialogs &&
+          dialogs.map((dialog: any) => (
+            <button
+              key={dialog.id}
+              onClick={() => selectChat(dialog)}
+              className="w-full flex justify-start gap-2 items-center border-b-2 border-r-2 border-gray-800 rounded-md p-3"
+            >
+              <img
                 width="50px"
                 height="50px"
                 src={bytesToPhoto(dialog.photo)}
@@ -51,11 +84,36 @@ function App() {
                 alt="avatar"
               />
               <p>{dialog.name}</p>
-          </button>
-        ))}
+            </button>
+          ))}
       </div>
       <div className="h-full w-full">
-      <p className="flex justify-center items-center h-screen">Select a chat to start messaging</p>
+        {!selectedDialog || !messages ? (
+          <p className="flex justify-center items-center h-screen">
+            Select a chat to start messaging
+          </p>
+        ) : (
+          <div className="h-screen flex flex-col">
+            <div className="flex-1 overflow-auto">
+            {messages &&
+              messages.map((message: any) => (
+                <div className="flex justify-start items-end gap-2 p-2 mb-2 mt-2 border-2">
+                  <img
+                    width="50px"
+                    height="50px"
+                    src={bytesToPhoto(message.avatar)}
+                    className="rounded-full"
+                    alt="avatar"
+                  />
+                  <p className=" whitespace-pre-wrap">{message.text}</p>
+                </div>
+              ))}
+            </div>
+            <div className=" mt-auto max-w-full">
+              <input className="w-full p-2 outline-none bg-black border-2 border-gray-800" placeholder="Write a message..."/>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
