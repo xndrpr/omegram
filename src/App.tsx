@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/tauri";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 
 import { Context } from "./main";
 import { useNavigate } from "react-router-dom";
@@ -13,6 +13,8 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [offset, setOffset] = useState(0);
   const limit = 15;
+
+  const endRef = useRef(null);
 
   useEffect(() => {
     async function initialize() {
@@ -47,6 +49,7 @@ function App() {
 
     const response = await invoke("get_chat_history", { id: dialog.id });
 
+    console.log(response);
     if (response && (response as any)[0].text) {
       setMessages(JSON.parse(response.toString()));
     } else {
@@ -65,6 +68,12 @@ function App() {
       console.log(messages);
     }
   }
+
+  useEffect(() => {
+    if (endRef.current) {
+      (endRef.current as any).scrollIntoView();
+    }
+  }, [messages]);
 
   return (
     <div className="dark h-screen w-screen grid grid-cols-1 justify-center items-center bg-black text-white">
@@ -95,22 +104,27 @@ function App() {
         ) : (
           <div className="h-screen flex flex-col">
             <div className="flex-1 overflow-auto">
-            {messages &&
-              messages.map((message: any) => (
-                <div className="flex justify-start items-end gap-2 p-2 mb-2 mt-2 border-2">
-                  <img
-                    width="50px"
-                    height="50px"
-                    src={bytesToPhoto(message.avatar)}
-                    className="rounded-full"
-                    alt="avatar"
-                  />
-                  <p className=" whitespace-pre-wrap">{message.text}</p>
-                </div>
-              ))}
+              {messages &&
+                messages.map((message: any) => (
+                  <div className="flex justify-start items-end gap-2 p-2 mb-2 mt-2">
+                    <img
+                      width="36px"
+                      height="36px"
+                      src={bytesToPhoto(message.avatar)}
+                      className="rounded-full"
+                      alt="avatar"
+                    />
+                    <p className="whitespace-pre-wrap">{message.text}</p>
+                  </div>
+                ))}
+              <div ref={endRef}></div>
             </div>
-            <div className=" mt-auto max-w-full">
-              <input className="w-full p-2 outline-none bg-black border-2 border-gray-800" placeholder="Write a message..."/>
+            <div className="flex mt-auto max-w-full">
+              <input
+                className="w-full p-2 outline-none bg-black border-2 border-gray-800"
+                placeholder="Write a message..."
+              />
+              <button className="bg-gray-800">Send</button>
             </div>
           </div>
         )}
